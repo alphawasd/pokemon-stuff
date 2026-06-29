@@ -1,0 +1,32 @@
+# Model weights / adapters — distributed via GitHub Releases, not in-tree
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+sft_qwen_*/
+grpo_*/
+*_step*/
+*_final/
+
+# Large data
+replays_raw/
+*.jsonl
+!data/sample_data.jsonl
+
+# Showdown server (cloned separately)
+pokemon-showdown/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Notebooks / scratch
+.ipynb_checkpoints/
+*.log
+ps.log
+
+# OS
+.DS_Store

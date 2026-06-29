@@ -1,0 +1,91 @@
+{
+  "sft_static_eval": {
+    "vanilla": {
+      "AA": 0.764,
+      "EM": 0.211,
+      "switch_EM": 0.148,
+      "move_EM": 0.234
+    },
+    "balanced": {
+      "AA": 0.583,
+      "EM": 0.322,
+      "switch_EM": 0.889,
+      "move_EM": 0.11
+    },
+    "note": "fresh split this session; absolute numbers differ from original SFT batch"
+  },
+  "grpo_runs": {
+    "runs_1_to_4": "FLAT (~27% win rate vs maxpower) \u2014 caused by gradient-throttle bug (clip 1.0 + /n_decisions averaging => ~600x too-small effective step)",
+    "bug_fix": "average by n_traj not n_decisions; weight delta went 2e-5 -> 2e-3 at lr=1e-3",
+    "lr_sweep": "2e-5 stable but too small; 1e-4 & 3e-4 diverge (grad_norm->1000+); 5e-5 stable to ~step25 then diverges",
+    "run_real3": {
+      "lr": 5e-05,
+      "kl_beta": 0.1,
+      "group": 16,
+      "steps": 40,
+      "win_curve_pct": [
+        25,
+        44,
+        44,
+        38,
+        25,
+        44,
+        44,
+        25,
+        12,
+        38,
+        50,
+        44,
+        56,
+        38,
+        38,
+        12,
+        31,
+        19,
+        12,
+        56,
+        31,
+        50,
+        38,
+        12,
+        44,
+        12,
+        25,
+        44,
+        31,
+        38,
+        38,
+        38,
+        19,
+        44,
+        19,
+        6,
+        38,
+        31,
+        25,
+        38
+      ],
+      "early_half_avg": 0.347,
+      "late_half_avg": 0.309,
+      "weight_delta_step20": 0.00102,
+      "divergence": "grad_norm explodes ~step28+ (2000-3600), loss to -10"
+    }
+  },
+  "head_to_head_step20_vs_balanced": {
+    "pilot_100": {
+      "grpo": 57,
+      "sft": 43,
+      "pct": 0.57,
+      "p": 0.18,
+      "verdict": "suggestive, not significant"
+    },
+    "confirm_300": {
+      "grpo": 131,
+      "sft": 169,
+      "pct": 0.437,
+      "p": 0.03,
+      "verdict": "REVERSES pilot; step20 does NOT beat SFT"
+    }
+  },
+  "conclusion": "GRPO did not improve play at this scale. Pipeline works; bug found; failure modes characterized. Negative-results + systems paper."
+}

@@ -1,0 +1,39 @@
+{
+  "ou_generalization_test": {
+    "team1_trained": {
+      "step5": 98,
+      "sft": 2,
+      "n": 100,
+      "median_turns": 41
+    },
+    "team2_unseen": {
+      "step5": 41,
+      "sft": 59,
+      "n": 100,
+      "median_turns": 25
+    },
+    "interpretation": "GRPO overfits to trained matchup; 98% on team1 does NOT transfer (41% on unseen team2). Matchup-specific exploitation, not transferable OU skill.",
+    "both_real_play": "0 short battles either condition; full-length games"
+  },
+  "ou_train_curve_pct": [
+    25,
+    62,
+    50,
+    62,
+    62,
+    50,
+    75,
+    88,
+    12,
+    38,
+    38,
+    12,
+    25,
+    12,
+    38,
+    0,
+    0,
+    0
+  ],
+  "config": "gen9ou, group=8, lr=5e-5, kl=0.1; SFT data was gen9ou; earlier RL confound was gen9randombattle default"
+}

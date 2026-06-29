@@ -1,0 +1,23 @@
+# Confirmed environment (Kaggle T4, June 2026)
+# Python 3.12.13
+#
+# Core ML stack — pinned to the exact versions used for the results in this repo.
+# Newer/older versions may work but are untested; the SFT trainer in particular
+# depends on TRL 0.24's `completion_only_loss` (the older
+# DataCollatorForCompletionOnlyLM was removed in TRL 5.x-era releases).
+torch==2.10.0
+transformers==5.5.0
+unsloth==2026.6.9
+trl==0.24.0
+peft==0.18.1
+
+# Battle environment (Pokemon Showdown interface)
+poke-env==0.15.0
+
+# Plotting (figures only)
+matplotlib
+numpy
+
+# NOTE: a local Pokemon Showdown server is also required for any live-play
+# (RL training / head-to-head eval). It is a Node.js project, installed
+# separately — see the README "Showdown server" section. It is NOT a pip dep.

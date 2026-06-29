@@ -1,0 +1,24 @@
+{
+  "grpo_ou1_curve_pct": [
+    25,
+    62,
+    50,
+    62,
+    62,
+    50,
+    75,
+    88,
+    12,
+    38,
+    38,
+    12,
+    25,
+    12,
+    38,
+    0,
+    0,
+    0
+  ],
+  "config": "gen9ou matched, group=8, lr=5e-5, kl=0.1, step1 weight-delta=5e-5",
+  "note": "OU rise-then-collapse: peak 88% at step8, degenerate 0/8 by step17. Server detachment fixed mid-run crashes."
+}
