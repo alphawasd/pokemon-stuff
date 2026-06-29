@@ -12,7 +12,7 @@ THE FIX (PokerBench's approach)
 -------------------------------
 Upsample switch decisions in the TRAINING data until move:switch is ~50:50,
 then retrain. If switch-EM rises off zero, the collapse was caused by class
-imbalance — a clean, directly-demonstrated result.
+imbalance ,  a clean, directly-demonstrated result.
 
 CRITICAL: only the TRAIN split is rebalanced. The TEST split stays at its
 natural 23% switch rate, or the SFT-vs-balanced comparison is meaningless
@@ -57,7 +57,7 @@ def main():
     target_switches = int(args.ratio * len(moves) / (1 - args.ratio))
 
     if target_switches <= len(switches):
-        # downsample (unlikely here) — just sample without replacement
+        # downsample (unlikely here) ,  just sample without replacement
         balanced_switches = rng.sample(switches, target_switches)
     else:
         # upsample with replacement (duplicates allowed)
@@ -79,7 +79,7 @@ def main():
     print(f"[balance] wrote -> {out}")
     print("\nNOTE: switches are duplicated, so the model sees the same switch")
     print("decisions multiple times. This tests the imbalance hypothesis but")
-    print("risks overfitting to those specific spots — watch switch-EM on the")
+    print("risks overfitting to those specific spots ,  watch switch-EM on the")
     print("UNCHANGED test set, not train loss, to judge real improvement.")
 
 

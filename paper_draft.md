@@ -2,11 +2,11 @@
 
 ## Abstract
 
-Recent work on language models for competitive Pokémon either wraps a frozen frontier model in minimax search (PokéChamp) or trains small numeric-input policy networks; whether a small language model can be fine-tuned end-to-end with on-policy reinforcement learning to play the game, and what fails when one tries, is open. We present an end-to-end pipeline that fine-tunes a 1.5B-parameter model (Qwen2.5-1.5B-Instruct) to play Gen 9 OU Pokémon on Pokémon Showdown, using supervised fine-tuning (SFT) on human replays followed by online Group-Relative Policy Optimisation (GRPO), all on a single free-tier T4 GPU. We report four findings. First, SFT on human replays produces a systematic action bias: the model under-switches (switch exact-match 14.8%), and naïve class rebalancing inverts the bias rather than removing it (switch exact-match 88.9%, move exact-match collapsing to 11.0%). Second, we introduce a constrained-decoding scheme that scores legal actions under the policy, eliminating illegal moves by construction (from 97% of turns to zero) and yielding exact log-probabilities for the policy gradient. Third, and most substantively, GRPO at this scale overfits to its training distribution rather than acquiring transferable skill: trained on a fixed Gen 9 OU matchup, the best checkpoint beats its SFT starting point 98–2 head-to-head on the team it trained against, but only 41–59 on an unseen team — the gain does not transfer. Training is also unstable, rising to a peak around step 8 before the gradient norm diverges and win rate collapses. Fourth, we document a gradient-throttling implementation pitfall that silently flattened five early runs, and a format confound (poke-env defaults to random battles) that initially hid the SFT distribution from the RL phase. We argue these failure modes are informative for anyone attempting on-policy RL of small models under compute constraints, and we release the full pipeline.
+Recent work on language models for competitive Pokémon either wraps a frozen frontier model in minimax search (PokéChamp) or trains small numeric-input policy networks; whether a small language model can be fine-tuned end-to-end with on-policy reinforcement learning to play the game, and what fails when one tries, is open. We present an end-to-end pipeline that fine-tunes a 1.5B-parameter model (Qwen2.5-1.5B-Instruct) to play Gen 9 OU Pokémon on Pokémon Showdown, using supervised fine-tuning (SFT) on human replays followed by online Group-Relative Policy Optimisation (GRPO), all on a single free-tier T4 GPU. We report four findings. First, SFT on human replays produces a systematic action bias: the model under-switches (switch exact-match 14.8%), and naïve class rebalancing inverts the bias rather than removing it (switch exact-match 88.9%, move exact-match collapsing to 11.0%). Second, we introduce a constrained-decoding scheme that scores legal actions under the policy, eliminating illegal moves by construction (from 97% of turns to zero) and yielding exact log-probabilities for the policy gradient. Third, and most substantively, GRPO at this scale overfits to its training distribution rather than acquiring transferable skill: trained on a fixed Gen 9 OU matchup, the best checkpoint beats its SFT starting point 98–2 head-to-head on the team it trained against, but only 41–59 on an unseen team; the gain does not transfer. Training is also unstable, rising to a peak around step 8 before the gradient norm diverges and win rate collapses. Fourth, we document a gradient-throttling implementation pitfall that silently flattened five early runs, and a format confound (poke-env defaults to random battles) that initially hid the SFT distribution from the RL phase. We argue these failure modes are informative for anyone attempting on-policy RL of small models under compute constraints, and we release the full pipeline.
 
 ## 1. Introduction
 
-Large language models have been applied to sequential decision-making games in two distinct ways. One line of work *trains* models for a specific game: PokerBench, for instance, fine-tunes LLMs to play poker and finds that supervised fine-tuning alone yields brittle, exploitable play. A separate line *prompts* frontier models to play Pokémon battles without any training, treating the model as a fixed policy. The natural intersection — actually training a language model to play competitive Pokémon — has not, to our knowledge, been attempted.
+Large language models have been applied to sequential decision-making games in two distinct ways. One line of work *trains* models for a specific game: PokerBench, for instance, fine-tunes LLMs to play poker and finds that supervised fine-tuning alone yields brittle, exploitable play. A separate line *prompts* frontier models to play Pokémon battles without any training, treating the model as a fixed policy. The natural intersection, actually training a language model to play competitive Pokémon, has not, to our knowledge, been attempted.
 
 We address this gap with a complete pipeline built under deliberately tight constraints: a 1.5B-parameter model, free-tier GPUs (Colab then Kaggle, single T4), and QLoRA fine-tuning. The small scale is intentional: it makes the pipeline reproducible by anyone, and it surfaces the practical obstacles to on-policy RL that larger-scale studies can afford to paper over.
 
@@ -53,7 +53,7 @@ We also implement **dense reward shaping**: in addition to the terminal reward, 
 
 ### 4.1 SFT reproduces and inverts an action bias
 
-Evaluating exact-match (EM) accuracy on a held-out split, separated by action type: vanilla SFT under-switches severely, achieving 23.4% move-EM but only 14.8% switch-EM — it defaults to attacking even when the human switched. Upsampling switches to 50% of the training set inverts the bias rather than removing it: balanced SFT reaches 88.9% switch-EM but move-EM collapses to 11.0%. Neither model recovers the correct action frequency. Naïve resampling relocates the bias from one action class to the other, motivating an outcome-driven objective. (Figure 2.)
+Evaluating exact-match (EM) accuracy on a held-out split, separated by action type: vanilla SFT under-switches severely, achieving 23.4% move-EM but only 14.8% switch-EM; it defaults to attacking even when the human switched. Upsampling switches to 50% of the training set inverts the bias rather than removing it: balanced SFT reaches 88.9% switch-EM but move-EM collapses to 11.0%. Neither model recovers the correct action frequency. Naïve resampling relocates the bias from one action class to the other, motivating an outcome-driven objective. (Figure 2.)
 
 ![Figure 2: Vanilla SFT under-switches; balancing inverts the bias rather than removing it.](figures/fig2_sft_bias.png)
 
@@ -87,7 +87,7 @@ ten steps before diverging.
 pre-divergence checkpoint (step 5) head-to-head against its SFT starting point,
 holding the opponent and greedy decoding fixed and varying only the team. On
 the team it trained against, the GRPO checkpoint wins 98 of 100. On an unseen
-OU team of a different archetype, it wins only 41 of 100 — losing to the SFT
+OU team of a different archetype, it wins only 41 of 100, losing to the SFT
 baseline it started from. Both conditions are full-length battles (median 41
 and 25 turns respectively, zero forfeits or timeouts), so the 98% reflects real
 in-battle play, not a degenerate artifact. The collapse from 98% to 41% when
@@ -107,7 +107,7 @@ not cover the broader distribution.
 
 **Head-to-head evaluation.** We evaluated the best pre-divergence checkpoint directly against its SFT starting point. A 100-battle pilot suggested an edge (57%), but a 300-battle evaluation reversed it: the RL checkpoint won 131 of 300 (43.7%, p = 0.03), i.e. it does not beat the baseline. We report the pilot reversal as a caution on small-sample evaluation in this high-variance domain.
 
-**Dense shaping stabilises but degrades.** Dense reward shaping eliminated the gradient divergence — the gradient norm remained bounded (approximately 300–500) for the full run rather than exploding. However, the policy degraded: over 19 steps the win rate drifted from 38% to zero, the mean shaped reward fell monotonically from −0.42 to −1.2, and the advantage variance collapsed. We attribute this to proxy over-optimisation: HP-preservation shaping rewards passive play that conserves the agent's HP while losing the game.
+**Dense shaping stabilises but degrades.** Dense reward shaping eliminated the gradient divergence: the gradient norm remained bounded (approximately 300–500) for the full run rather than exploding. However, the policy degraded: over 19 steps the win rate drifted from 38% to zero, the mean shaped reward fell monotonically from -0.42 to -1.2, and the advantage variance collapsed. We attribute this to proxy over-optimisation: HP-preservation shaping rewards passive play that conserves the agent's HP while losing the game.
 
 ### 4.4 A gradient-throttling pitfall
 
@@ -125,7 +125,7 @@ Our study is constrained to a single 1.5B model, a single training opponent (Max
 
 ## 7. Conclusion
 
-We built and released an end-to-end pipeline for training a small language model to play competitive Pokémon, spanning replay-based SFT, a constrained-decoding live-play agent, and online GRPO on a single free-tier GPU. The pipeline works; the supervised phase reveals an instructive action-bias that resampling cannot fix; and the reinforcement-learning phase, on its matched training matchup, produces a large head-to-head gain over its supervised start that does not transfer to an unseen team — small-scale GRPO here overfits its narrow training distribution rather than learning general play, and does so unstably. We characterise the failure modes — gradient variance and divergence, reward-shaping proxy exploitation, matchup overfitting, a gradient-throttling pitfall, and a format confound — in the hope that they are useful to others attempting on-policy RL of small models under realistic compute budgets.
+We built and released an end-to-end pipeline for training a small language model to play competitive Pokémon, spanning replay-based SFT, a constrained-decoding live-play agent, and online GRPO on a single free-tier GPU. The pipeline works; the supervised phase reveals an instructive action-bias that resampling cannot fix; and the reinforcement-learning phase, on its matched training matchup, produces a large head-to-head gain over its supervised start that does not transfer to an unseen team, small-scale GRPO here overfits its narrow training distribution rather than learning general play, and does so unstably. We characterise the failure modes, gradient variance and divergence, reward-shaping proxy exploitation, matchup overfitting, a gradient-throttling pitfall, and a format confound, in the hope that they are useful to others attempting on-policy RL of small models under realistic compute budgets.
 
 ## Appendix A: Reproducibility and the weight-delta diagnostic
 
@@ -135,8 +135,8 @@ We built and released an end-to-end pipeline for training a small language model
 |---|---|---|---|
 | 2e-5 | ~2e-5 | bounded | stable but too small to change decisions |
 | 5e-5 | ~1e-3 (by step 20) | ~300–500 rising to >10^3 | productive ~8 steps, then diverges |
-| 1e-4 | — | >1000 within ~10 steps | diverges |
-| 3e-4 | — | 1000–3600 | diverges |
+| 1e-4 |, | >1000 within ~10 steps | diverges |
+| 3e-4 |, | 1000–3600 | diverges |
 | 1e-3 | ~1e-3 (one step) | ~600 | unstable |
 
 **Weight-delta diagnostic.** `rl_stage_c.py` prints the maximum absolute change

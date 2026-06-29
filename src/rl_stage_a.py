@@ -1,33 +1,20 @@
 """
-Stage A — Trajectory-logging LLM Player (foundation for online GRPO)
-===================================================================
+Stage A: trajectory-logging LLM player (foundation for online GRPO).
 
-GOAL (narrow, testable): can the SFT model play FULL Gen 9 OU battles via
-poke-env against a scripted bot, while LOGGING everything GRPO will need —
-(prompt, generated action text, action token ids, token log-probs, the battle
-object) for every decision — and report the win rate?
+A poke-env Player that plays full Gen 9 OU battles with the SFT model and logs
+everything GRPO needs for each decision: the prompt, the chosen action text,
+token log-probabilities, HP state, and the win/loss outcome. No learning here;
+this isolates the systems plumbing (LLM generation in poke-env's async loop,
+mapping text actions to legal orders, capturing token log-probs, clean battle
+outcomes) so Stage B and Stage C can build on it.
 
-NO LEARNING HERE. This de-risks the systems plumbing:
-  - LLM generation inside poke-env's async battle loop,
-  - mapping LLM text actions -> legal poke-env orders,
-  - capturing token-level log-probs (which GRPO needs and the Gym wrapper hides),
-  - getting clean win/loss at battle end.
+Format contract (must match SFT): the prompt is built by _build_prompt below;
+the chat template is applied with add_generation_prompt=True at inference.
 
-If this runs and the win rate / logged trajectories look sane, Stage B (group
-rollouts + advantages) and Stage C (the GRPO update) sit on top of it.
+Prereqs: a local Showdown server (node pokemon-showdown start --no-security),
+poke-env, unsloth, transformers, and an SFT adapter directory.
 
-FORMAT CONTRACT (must match SFT exactly):
-  - prompt built by _build_prompt below, identical shape to sft_data_prep.py
-    (no trailing "Decision: ").
-  - chat template applied with add_generation_prompt=True at inference.
-  - generation max_new_tokens>=48, pad_token_id=eos.
-
-PREREQS (Kaggle/Colab):
-  - local Showdown server running:  node pokemon-showdown start --no-security &
-  - pip install poke-env unsloth transformers
-  - the SFT adapter dir present (e.g. sft_qwen_balanced/ or sft_qwen_vanilla/)
-
-USAGE:
+Usage:
   python rl_stage_a.py --adapter sft_qwen_balanced --n-battles 5
 """
 
@@ -38,9 +25,7 @@ import re
 from dataclasses import dataclass, field
 
 
-# --------------------------------------------------------------------------- #
-# Per-decision record — everything GRPO will consume later
-# --------------------------------------------------------------------------- #
+# Per-decision record ,  everything GRPO will consume later
 @dataclass
 class DecisionRecord:
     turn: int
@@ -67,15 +52,13 @@ class Trajectory:
         return sum(sum(d.token_logprobs) for d in self.decisions)
 
 
-# --------------------------------------------------------------------------- #
-# Prompt builder — LIVE version with LEGAL ACTIONS listed.
+# Prompt builder ,  LIVE version with LEGAL ACTIONS listed.
 #
 # This deliberately DIFFERS from the SFT prompt: it appends the actual legal
 # moves and switch targets from the poke-env Battle. SFT taught a prior over
 # Showdown play from replays (no legal lists); RL adapts that prior to legal,
 # live decision-making. Listing the menu is what kills the ~97% fallback rate
 # seen when the model guessed action names blind.
-# --------------------------------------------------------------------------- #
 def _build_prompt(battle) -> str:
     active = battle.active_pokemon
     opp = battle.opponent_active_pokemon
@@ -86,7 +69,7 @@ def _build_prompt(battle) -> str:
     opp_hp = (f"{int(opp.current_hp_fraction*100)}/100"
               if opp and opp.current_hp_fraction is not None else "?")
 
-    # the legal menu — the key addition vs the SFT prompt
+    # the legal menu ,  the key addition vs the SFT prompt
     legal_moves = [m.id for m in battle.available_moves]
     legal_switches = [s.species for s in battle.available_switches]
 
@@ -123,9 +106,7 @@ def _norm(s: str) -> str:
     return re.sub(r"[\s\-_.]", "", s.lower())
 
 
-# --------------------------------------------------------------------------- #
 # Build the LLM player class (factory so we can inject model/tokenizer)
-# --------------------------------------------------------------------------- #
 def make_llm_player(model, tokenizer, temperature: float):
     import torch
     from poke_env.player import Player
@@ -262,7 +243,6 @@ def make_llm_player(model, tokenizer, temperature: float):
     return LLMPlayer
 
 
-# --------------------------------------------------------------------------- #
 async def run(args):
     from unsloth import FastLanguageModel
     from poke_env.player import SimpleHeuristicsPlayer

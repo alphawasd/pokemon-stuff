@@ -17,8 +17,8 @@ that player's information state. This approximation is imperfect by nature:
   - HP in public replays is shown as a percentage (e.g. 64/100), not exact.
   - Items/abilities/EV spreads are hidden until revealed by an effect.
 
-That's fine for a first SFT pass — strong-human action labels are still the
-signal we want — but it means you MUST eyeball the produced pairs before
+That's fine for a first SFT pass ,  strong-human action labels are still the
+signal we want ,  but it means you MUST eyeball the produced pairs before
 trusting them at scale. The PokerBench lesson applies: garbage labels train a
 confident-but-wrong model. So this script is built to be INSPECTED first.
 
@@ -61,9 +61,7 @@ OUT_JSONL = Path("sft_train.jsonl")
 HEADERS = {"User-Agent": "sft-data-prep-research/0.1 (educational use)"}
 
 
-# --------------------------------------------------------------------------- #
 # Stage 1: download
-# --------------------------------------------------------------------------- #
 def _get_json(url: str):
     req = urllib.request.Request(url, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -97,7 +95,7 @@ def download(args):
             rid = meta.get("id")
             rating = meta.get("rating")  # may be None for some replays
             # Filter on rating when present. Replays without a rating are
-            # unranked games — skip them for a high-Elo SFT set.
+            # unranked games ,  skip them for a high-Elo SFT set.
             if args.min_rating > 0:
                 if rating is None or rating < args.min_rating:
                     n_skipped_rating += 1
@@ -122,9 +120,7 @@ def download(args):
           f"skipped_low_rating={n_skipped_rating}, dir={RAW_DIR}/")
 
 
-# --------------------------------------------------------------------------- #
 # Stage 2: parse log -> state/action pairs
-# --------------------------------------------------------------------------- #
 #
 # Showdown battle-log lines we care about (pipe-delimited). A minimal subset:
 #   |player|p1|Username|avatar|rating
@@ -140,15 +136,14 @@ def download(args):
 #
 # The action label for a player on a given turn is the FIRST committed action
 # we see from them after a |turn| marker: either a |move| or a |switch|.
-# (Switches that are forced by a faint are excluded — they aren't a free
+# (Switches that are forced by a faint are excluded ,  they aren't a free
 # decision and would pollute the labels.)
-# --------------------------------------------------------------------------- #
 
 class BattleState:
     """Tracks an approximation of what is known, replaying the log forward.
 
     We keep it deliberately small and legible. This is NOT a full battle
-    engine — it's just enough state to describe a decision point for SFT.
+    engine ,  it's just enough state to describe a decision point for SFT.
     """
     def __init__(self):
         self.turn = 0
@@ -310,14 +305,14 @@ def _state_to_prompt(state: dict) -> str:
 def parse(args):
     files = sorted(RAW_DIR.glob("*.json"))
     if not files:
-        print(f"[parse] no replays in {RAW_DIR}/ — run the download stage first.")
+        print(f"[parse] no replays in {RAW_DIR}/ ,  run the download stage first.")
         return
 
     if args.limit == 1:
         # inspection mode: parse one, pretty-print, write nothing
         replay = json.loads(files[0].read_text())
         parse_one(replay, verbose=True)
-        print("[parse] inspection mode — nothing written. "
+        print("[parse] inspection mode ,  nothing written. "
               "Re-run without --limit 1 to write JSONL.")
         return
 
@@ -347,7 +342,6 @@ def parse(args):
     print(f"[parse] wrote {n_pairs} pairs from {n_replays} replays -> {OUT_JSONL}")
 
 
-# --------------------------------------------------------------------------- #
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)

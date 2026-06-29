@@ -48,9 +48,7 @@ import re
 from collections import Counter, defaultdict
 
 
-# --------------------------------------------------------------------------- #
 # split
-# --------------------------------------------------------------------------- #
 def split(args):
     rows = [json.loads(l) for l in open(args.data)]
 
@@ -93,9 +91,7 @@ def split(args):
     print(f"[split] replay overlap (must be 0): {len(overlap)}")
 
 
-# --------------------------------------------------------------------------- #
 # eval
-# --------------------------------------------------------------------------- #
 def _parse_action(text: str):
     """Extract {'action':..., 'value':...} from model output. Returns None on
     failure (a failure to produce valid JSON is itself a model error we count)."""
@@ -203,7 +199,6 @@ def eval_adapter(args):
     print("move-EM means it under-switches (the PokerBench 'over-passive' leak).")
 
 
-# --------------------------------------------------------------------------- #
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)

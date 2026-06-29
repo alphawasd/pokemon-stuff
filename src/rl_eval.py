@@ -1,12 +1,12 @@
 """
-RL evaluation harness — the paper's results section
+RL evaluation harness ,  the paper's results section
 ====================================================
 
 Two comparisons, both needed because win-rate-vs-opponent came out flat:
 
 1. STATIC (action distribution): run split_eval-style metrics for several
    adapters on the SAME fresh test split. Shows whether GRPO shifted the
-   action distribution (switch-EM / move-EM) away from the SFT baseline —
+   action distribution (switch-EM / move-EM) away from the SFT baseline , 
    "RL changed behavior" even if win rate didn't move.
 
 2. HEAD-TO-HEAD (live): play adapter A directly against adapter B via the
@@ -35,11 +35,9 @@ import json
 import re
 
 
-# --------------------------------------------------------------------------- #
 # STATIC: action-distribution metrics on a held-out split (no battles)
 # Mirrors split_eval's metric definitions so numbers are comparable to the
 # SFT-phase methodology.
-# --------------------------------------------------------------------------- #
 def _parse(text):
     try:
         m = re.search(r"\{.*?\}", text, re.DOTALL)
@@ -118,13 +116,11 @@ def run_static(args):
     print("result) even when win rate vs the scripted opponent stayed flat.")
 
 
-# --------------------------------------------------------------------------- #
 # DRIFT: measure sub-argmax policy change between two adapters.
 # EM only moves when the top action flips. A small weight change shifts the
 # PROBABILITY mass without flipping argmax, so EM looks identical. This metric
 # scores the gold action's logprob under each adapter and reports how the
-# distribution moved — the change EM can't see.
-# --------------------------------------------------------------------------- #
+# distribution moved ,  the change EM can't see.
 def _gold_action_logprob(model, tok, prompt, completion):
     import torch
     messages = [{"role": "user", "content": prompt}]

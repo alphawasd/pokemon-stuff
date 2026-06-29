@@ -1,5 +1,5 @@
 """
-Stage B — Group rollouts + GRPO advantages (no gradient update yet)
+Stage B ,  Group rollouts + GRPO advantages (no gradient update yet)
 ===================================================================
 
 Builds on Stage A's validated constrained-scoring player. Adds the GRPO group
@@ -17,7 +17,7 @@ group average get positive advantage, worse-than-average negative. Every
 decision in a trajectory inherits that trajectory's advantage (credit
 assignment: the whole game shares the outcome).
 
-REWARD: terminal-only (+1/-1). Dense shaping is deliberately omitted — the
+REWARD: terminal-only (+1/-1). Dense shaping is deliberately omitted ,  the
 Pokemon-Red RL work shows shaping gets hacked; we want a clean signal first.
 
 WHAT THIS STAGE PROVES
@@ -160,7 +160,7 @@ async def run(args):
             opponent_cls)
 
         if not trajs:
-            print("  no finished battles in this group — skipping.")
+            print("  no finished battles in this group ,  skipping.")
             continue
 
         scored = compute_group_advantages(trajs)
@@ -201,10 +201,10 @@ async def run(args):
         print("\nREAD: if advantages are sane (winners +, losers -) and we have")
         print("decision-level logprobs + advantages, Stage C can compute the")
         print("GRPO loss and update the LoRA. A group of all-wins or all-losses")
-        print("gives ZERO advantage (no signal) — that's expected; more groups")
+        print("gives ZERO advantage (no signal) ,  that's expected; more groups")
         print("/ a tougher or matched opponent fixes it.")
     else:
-        print("no groups produced finished battles — check the server / adapter.")
+        print("no groups produced finished battles ,  check the server / adapter.")
 
 
 def main():

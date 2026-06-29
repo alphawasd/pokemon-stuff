@@ -9,7 +9,7 @@ KEY DESIGN DECISIONS (these matter for a paper)
 -----------------------------------------------
 1. COMPLETION-ONLY LOSS. We mask the prompt tokens and compute loss ONLY on
    the action JSON. Reason: we want the model to learn "given this state,
-   produce this action" — NOT to memorise/reproduce the state description.
+   produce this action" ,  NOT to memorise/reproduce the state description.
    Training on the prompt too would waste capacity and bias the model toward
    parroting state text. This is done via DataCollatorForCompletionOnlyLM.
 
@@ -42,7 +42,7 @@ def load_pairs(path: str):
 
     Uses the prompt-completion dataset format. With completion_only_loss=True
     in SFTConfig, TRL masks the prompt tokens automatically and computes loss
-    ONLY on the completion — no manual response-template collator needed.
+    ONLY on the completion ,  no manual response-template collator needed.
     """
     from datasets import Dataset
     rows = [json.loads(l) for l in open(path)]
@@ -125,7 +125,7 @@ def main():
     # ---- quick sanity generation ----
     # IMPORTANT: use the SAME chat template the trainer applied, or the model
     # sees an out-of-distribution prompt and produces garbage (chatty prose).
-    # No trailing "Decision: " — the assistant turn is the sole answer boundary.
+    # No trailing "Decision: " ,  the assistant turn is the sole answer boundary.
     FastLanguageModel.for_inference(model)
     test_prompt = (
         "You are an expert Gen 9 OU Pokemon battler. Given the state, respond "

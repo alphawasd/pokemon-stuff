@@ -1,37 +1,23 @@
 """
-Stage C — GRPO update loop (the actual learning)
-================================================
+Stage C: GRPO update loop.
 
-Builds on Stage A (constrained-scoring player) + Stage B (group advantages).
-This is the finish line: roll a group, recompute each chosen action's logprob
-under the CURRENT policy WITH GRADIENTS, compute the GRPO loss against the
-group-relative advantages, KL-penalize against the frozen SFT reference, and
-update the LoRA. Loop over groups, logging win rate so you can watch it climb.
+Builds on Stage A (constrained-scoring player) and Stage B (group advantages).
+Rolls a group of battles, recomputes each chosen action's log-probability under
+the current policy with gradients, computes the GRPO loss against the
+group-relative advantages, applies a KL penalty against the frozen SFT
+reference, and updates the LoRA.
 
-GRPO LOSS (per decision):
-    L = -( advantage * logπ_θ(action) )  +  β * KL( π_θ || π_ref )
-  - advantage: group-normalized terminal reward (Stage B), shared by all
-    decisions in a trajectory.
-  - logπ_θ(action): summed token-logprob of the chosen legal action under the
-    trainable policy (constrained-scoring, now with grad).
-  - KL term keeps the policy from drifting far from the SFT reference (which
-    preserves what SFT learned). Approximated per-decision with the same
-    chosen-action logprobs under policy vs reference.
+GRPO loss per decision:
+    L = -(advantage * log p_theta(action)) + beta * KL(p_theta || p_ref)
 
-DESIGN FOR DEBUGGABILITY:
-  - runs ONE update step, prints loss / grad-norm / win rate, and checkpoints,
-    BEFORE looping. A bug (grad flow, indexing, OOM) surfaces on step 1.
-  - degenerate groups (all-win/all-loss -> zero advantage) are skipped.
+The loop runs and checkpoints one update step before continuing, so grad-flow,
+indexing, or OOM bugs surface on step 1. Degenerate groups (all-win or all-loss,
+hence zero advantage) are skipped.
 
-THROUGHPUT REALITY: one step = one group = group_size battles. On a T4 expect
-a few minutes per step, so a few dozen steps per session. Enough to DEMONSTRATE
-learning (the paper's goal), not to fully train a champion. Checkpoints let you
-resume across sessions.
-
-USAGE:
-  python rl_stage_c.py --adapter /kaggle/working/sft_qwen_balanced \\
+Usage:
+  python rl_stage_c.py --adapter sft_qwen_balanced \\
       --opponent maxpower --group-size 8 --temperature 0.6 \\
-      --steps 5 --lr 1e-5 --kl-beta 0.05 --out grpo_ckpt
+      --steps 25 --lr 5e-5 --kl-beta 0.1 --out grpo_ou1
 """
 
 import argparse
@@ -42,11 +28,9 @@ from rl_stage_a import _build_prompt, Trajectory, DecisionRecord
 from rl_stage_b import compute_group_advantages, compute_decision_advantages
 
 
-# --------------------------------------------------------------------------- #
 # Re-score a recorded decision under a given model, WITH gradients.
 # Mirrors Stage A's constrained scoring but returns a differentiable logprob
 # for the single chosen action (we already know which action was taken).
-# --------------------------------------------------------------------------- #
 def chosen_action_logprob(model, tokenizer, prompt, completion, requires_grad):
     import torch
     messages = [{"role": "user", "content": prompt}]
@@ -94,7 +78,7 @@ def grpo_step(policy, ref, tokenizer, scored, optimizer, kl_beta):
     NOTE on update magnitude (the fix): earlier we divided the accumulated grad
     by the decision count n (~550) AND clipped to norm 1.0. That combination
     made the effective step size ~= lr regardless of lr (the clip sets the norm,
-    lr only scales a unit vector), so raising lr did nothing — weight deltas
+    lr only scales a unit vector), so raising lr did nothing ,  weight deltas
     stayed ~1e-5 across runs. Fix: average by NUMBER OF TRAJECTORIES (the GRPO
     unit), not per-decision, so within-trajectory gradients sum (reinforcing the
     shared advantage) instead of being washed out; and clip to a loose 10.0 so
@@ -281,7 +265,7 @@ async def run(args):
                     print(f"         [weight-delta after step 1] max |Δ| = {mx:.2e}")
                     if mx < 1e-3:
                         print(f"         WARNING: tiny update ({mx:.2e}). Greedy "
-                              f"behavior likely unchanged — consider raising --lr.")
+                              f"behavior likely unchanged ,  consider raising --lr.")
                     else:
                         print(f"         OK: policy moving meaningfully.")
                 except Exception as e:
